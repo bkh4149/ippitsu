@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title></title>
+	<meta charset="utf-8" />
+  <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+  <script type="text/javascript">
+
+
+   function draw() {
+        var canvas = document.getElementById('SimpleCanvas');
+        var context = canvas.getContext('2d');
+        //データの送受信の流れ
+        //１：メインルーティング（flask17_app.py）でxyデータをデータベースから取得（sql文を使ってartテーブルからひつような部分を取得）
+        //２：　　jinja2の機能をつかって　xyデータ（art.paint）をhtmlにレンダリング
+        //　　　　というとhtml部分の気がするが、じゃなくて　JavaScriptの<script>以下の（二重のひげかっこ）の部分を書き換えている
+        //２：レンダリングされたhtmlファイル（→cv17b.html）をクライアントに送信
+        //３:クライアント側でhtml（→cv17b.html）を受信する
+        //　　3a:xyデータは　（二重のひげかっこ）を書き換えて１塊の文字列になっているので変数tagetStringにまとめてぶち込む、この時点で変数は文字列である
+        //　　3b:スペースで分離　あらたな変数（st）に入れる
+        //渡されたxyデータをJavaScriptの変数に変換している
+        //テキストをデータに変換する
+        var ts1 = "{{art.paint}}";  //3a
+        //alert("ts1[0]="+ts1[0]);
+
+        if (ts1[0]=="{"){
+            //新方式のフォーマット＝オブジェクト形式
+
+            //htmlエンティティを修正
+            var txt = document.createElement("textarea");
+            txt.innerHTML = ts1;
+            var ts2 = txt.value;  // これはまだ文字列
+            //文字列をオブジェクトに変換
+            var obj = JSON.parse(ts2);
+            //オブジェクトを配列に変換
+            xx=obj["xx"];
+            yy=obj["yy"];
+
+        } else {
+            //従来のフォーマット
+            var St = ts1.split(" ");//3b
+            var xx=[];
+            var yy=[];
+            var lgt = parseInt(St[0]);
+            //xx,yyのリストに変換
+            for (var i=0;i<lgt;i++){
+                xx[i]=parseInt(St[i+1])
+                yy[i]=parseInt(St[i+1+lgt])
+            }
+
+        }
+        //console.log(`最後のところ　xx= ${xx}`);
+
+        //ここでプロット
+        for (var i=0;i< xx.length;i++){
+            context.fillRect(xx[i],yy[i],5,5);
+        }
+    }
+  </script>
+</head>
+<body onload="draw()" >
+    <canvas id="SimpleCanvas" width="640" height="360" style="background-color:#FFFFFF;"></canvas>
+    <div>Canvas Demo</div>
+    <hr>
+    <h1>内容チェック　</h1>
+    <p>{{ message }}</p>
+    <p>
+        id:{{ art.id }}<br>
+        書いた日：{{ art.ctime }}<br>
+        書いた人：{{ art.name }}<br><br>
+        内容：{{ art.naiyo }}<br>
+    </p>
+    <h3>戻る</h3>
+    <form action="/">
+        <button type="submit">戻る</button>
+    </form>
+    art.paintの中身確認のため（そのうち消す）<br>
+    {{art.paint}}
+</body>
+</html>

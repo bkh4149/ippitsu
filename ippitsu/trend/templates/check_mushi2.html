@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title></title>
+	<meta charset="utf-8" />
+  <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+  <script type="text/javascript">
+    var ctx,iset;
+    var xx=[];
+    var yy=[];
+    var timer;
+
+   function draw() {
+        canvas = document.getElementById('SimpleCanvas');
+        ctx = canvas.getContext('2d');
+ 
+        var tagetString ="{{art.paint}}";//3a
+        var St = tagetString.split(" ");//3b
+        //console.log(St);
+        var lgt = parseInt(St[0]);
+        //xx,yyのリストに変換
+        for (var i=0;i<lgt;i++){
+          xx[i]=parseInt(St[i+1])
+          yy[i]=parseInt(St[i+1+lgt])
+        }
+        iset=50
+        //ここまではデータの格納
+
+        timer=setInterval(plot1,20)
+ 
+        //ここでプロット
+        function plot1(){
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (var i=iset-50;i<=iset;i++){
+                var x1=xx[i];
+                var y1=yy[i];
+                var rev=(iset-i)/50;//透明度設定
+                ctx.globalAlpha = 1-rev;
+                ctx.fillRect(x1,y1,5,5);
+            }
+
+            iset +=1;
+            if (iset>lgt){
+                clearInterval(timer);
+            }
+        }
+    }
+  </script>
+</head>
+<body onload="draw()" >
+    <canvas id="SimpleCanvas" width="640" height="360" style="background-color:#FFFFFF;"></canvas>
+    <div>Canvas Demo</div>
+    <hr>
+    <h1>内容チェック　</h1>
+    <p>{{ message }}</p>
+    <p>
+        id:{{ art.id }}<br>
+        書いた日：{{ art.ctime }}<br>
+        書いた人：{{ art.name }}<br><br>
+        内容：{{ art.naiyo }}<br>
+    </p>
+    <h3>戻る</h3>
+    <form action="/">
+        <button type="submit">戻る</button>
+    </form>
+    art.paintの中身確認のため（そのうち消す）<br>
+    {{art.paint}}
+</body>
+</html>

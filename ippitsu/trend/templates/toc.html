@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+　　<meta charset="utf-8">
+    <title>Touch Tracker Marker</title>
+    <meta name="viewport" content="width=device-width, user-scalable=no">
+	<style type="text/css">
+		body { margin: 0px; overflow: hidden; }
+		canvas { border: 1px solid black; }
+
+		 .block {
+		    width:500px; 
+		    height:100px;
+		    background-color:#999999;
+		    word-wrap: break-word;
+            font-size:  12px;    /* 文字サイズ指定 */
+
+		  }
+
+		 .block2 {
+		    width:500px; 
+		    height:100px;
+		    background-color:#009999;
+		    word-wrap: break-word;
+		    font-size:  12px;    /* 文字サイズ指定 */
+		  }
+	</style>
+
+<script type="text/javascript" src="magictouch.js"></script>
+<script type="text/javascript">
+    //グローバル　setIntervalの中で使うため
+    var canvas;
+    var ctx;
+    var w = 0;
+    var h = 0;
+    var timer;
+    var updateStarted = false;
+    var touches = [];
+    var ct;
+    var tic=0;
+
+
+
+    var xx=[],yy=[],num=[],tick=[];
+
+    //setIntervalの外側、オンロード終了で最初の来るところ
+    function onload_start() {
+        canvas = document.getElementById('canvas');
+        ctx = canvas.getContext('2d');
+        timer = setInterval(update, 15);//●ここがsetInterval()
+
+        //イベントリスナー１　タッチ開始
+        canvas.addEventListener('touchstart', function(event) {
+            //console.log('start');
+            if (tic==0){
+                xx=[];
+                yy=[];
+                num=[];　　
+                tick=[];　　
+            } 
+        });
+
+        //イベントリスナー２　タッチの継続、移動
+        canvas.addEventListener('touchmove', function(event) {
+            event.preventDefault();
+            touches = event.touches;
+        });
+
+        //イベントリスナー３　タッチの終了
+        canvas.addEventListener('touchend', function() {
+            //ctx.clearRect(0, 0, w, h);
+            //clearInterval(timer);
+            //st = "<div class=\"block\">タッチの終了のところ xx,num,tick" + JSON.stringify(xx) + JSON.stringify(num)  + JSON.stringify(tick) + "</div>";
+         	//document.getElementById('1st area').innerHTML = st;
+
+        });
+
+
+    };
+
+    // setIntervalの内側　キャプチャ時　指の位置に○を表示すると同時にx,yの座標を配列に取り込む
+    function update() {
+        if (updateStarted) return;//updateStarted=Trueなら何もせずに戻る
+        updateStarted = true;//setintervalで設定した15msec以内に、ここを２回実行しないようにしている
+        var nw = window.innerWidth;  // ブラウザの大きさ
+        var nh = window.innerHeight;
+        if ((w != nw) || (h != nh)) {
+            w = nw;  // canvasをブラウザいっぱいにしている
+            h = nh-300;  // canvasをブラウザいっぱい -300にしている
+            canvas.style.width = nw+'px';
+            canvas.style.height = nh-300+'px';
+            canvas.width = nw;  // canvasをブラウザいっぱいにしている
+            canvas.height = nh-300;
+        }
+        ctx.clearRect(0, 0, w, h);
+
+        var len = touches.length;  //len=指の本数
+        for (var i=0; i<len; i++) {  //i=指番号　 (3本指でタッチしたら３回ループする)
+            var touch = touches[i];
+            //st = "<div class=\"block2\">forのところ" + JSON.stringify(touch) + "</div>";
+            //st=String(px)
+            var px = touch.pageX+40;//触っているx,y座標取得（指と重ならないよう少しずらす
+            var py = touch.pageY-40;
+            px =  Math.round(px);//丸め
+            py =  Math.round(py);
+			//ここからcanvasへ　○　をdraw
+            ctx.beginPath();
+            ctx.arc(px, py, 20, 0, 2*Math.PI, true);
+            ctx.fillStyle = "rgba(0, 0, 200, 0.2)";
+            ctx.fill();
+            ctx.lineWidth = 2.0;
+            ctx.strokeStyle = "rgba(0, 0, 200, 0.8)";
+            ctx.stroke();
+            //データを配列に保存
+            xx.push(px);        
+            yy.push(py);
+            num.push(i);  //指番号も保存しておく
+            tick.push(tic);  //time tickも保存しておく
+
+            startX = px;  //次のスタートをキープしておく
+            startY = py;
+        };
+        tic += 1
+        updateStarted = false;
+    };
+
+
+
+
+    //setIntervalの外側　送信
+    function send_data(){
+
+        /*配列の差分をとってオブジェクトに変換
+        var xsb=[],ysb=[];
+        for (var i=0;i<xx.length;i++){
+            xsb.push(xx[i]-xx[0]);
+            ysb.push(yy[i]-yy[0]);
+        }
+        var dic={'x':xx[0],'y':yy[0],'xx':xsb,"yy":ysb,"num":num}
+        */
+
+        //送っているのはform.submitだ、request変数にデータを集約し、それをformに貼り付けている　　　
+        //送信準備
+        var dic={'xx':x,'yy':y,'num':num,'tick':tick};  //オブジェクトに変換
+        var form = document.createElement('form');      //親のオブジェクト
+        var request = document.createElement('input');  //入力フォームで入れた体にする
+        //request変数にデータを集約
+        request.type = 'hidden';            //入力フォームが表示されないように
+        request.name = 'tx';                //変数名
+        request.value = JSON.stringify(dic);//変数の中身
+        //ここから    
+        form.method = 'POST';               //送る準備
+        form.action = '/toc_res';          //CGIプログラムのURI
+        form.appendChild(request);          //formにrequest変数をくっつける
+        document.body.appendChild(form);    //formをbodyに貼り付ける
+        form.submit();                      //ここで送信
+    }
+
+    //-------------------------------キャプチャ終了----------------------------
+    //setInterval　再現
+    function end_capture(){
+        ctx.clearRect(0, 0, w, h);//これなに？
+        clearInterval(timer);//setinterval() を終わらせる
+        //デバッグ用にデータ表示
+        st = "<div class=\"block\">end_caputureのところ xx,num,tick" + JSON.stringify(xx) + JSON.stringify(num)  + JSON.stringify(tick) + "</div>";
+      	document.getElementById('1st area').innerHTML = st;
+    };
+
+    //-------------------------------リプレー----------------------------
+    //setInterval　再現
+    function replay(){
+        //表示
+       	//st = "<div class=\"block\">replayのところ xx,num,tick" + JSON.stringify(xx) + JSON.stringify(num) +  JSON.stringify(tick) + "</div>";
+       	//document.getElementById('1st area').innerHTML = st;
+        //いつものやつ　　
+       canvas = document.getElementById('canvas');
+       ctx = canvas.getContext('2d');
+       ct=0;
+       timer = setInterval(update_replay, 15);//●ここがsetInterval()
+    };
+
+    //setInterval　の内側
+	function update_replay() {
+        var px = xx[ct];
+        var py = yy[ct];
+        ctx.beginPath();
+        ctx.arc(px, py, 20, 0, 2 * Math.PI, true);
+        ctx.fillStyle = "rgba(0, 0, 200, 0.2)";
+        ctx.fill();
+        ctx.lineWidth = 2.0;
+        ctx.strokeStyle = "rgba(0, 0, 200, 0.2)";
+        ctx.stroke();
+            ct+=1;
+            if (ct >= num.length) {
+        　            clearInterval(timer);
+            };
+    };
+
+
+	</script>
+</head>
+<body onload="onload_start()">
+	2019/03/09　11:07
+	<canvas id="canvas" width="300" height="150" style="top:0px; left:0px; width: 300px; height: 300px;"></canvas>
+    　　<button onclick="end_capture()">終了</button>
+    　　<button onclick="replay()">再現</button>
+    　　<button id="send_data" onclick="send_data()">送信</button>
+	<div id="1st area">1st</div>
+</body>
+</html>

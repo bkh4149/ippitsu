@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title></title>
+	<meta charset="utf-8" />
+  <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+  <script type="text/javascript">
+
+
+  function draw() {
+  　　  var canvas = document.getElementById('SimpleCanvas');
+　　　  var context = canvas.getContext('2d');
+       
+
+        var tagetString ="{{art.paint}}";//3a
+        var St = tagetString.split(" ");//3b
+        //console.log(St);
+        var xx=[];
+        var yy=[];
+        var lgt = parseInt(St[0]);
+        //xx,yyのリストに変換
+        for (var i=0;i<lgt;i++){
+          xx[i]=parseInt(St[i+1])
+          yy[i]=parseInt(St[i+1+lgt])
+        }
+        alert("xx,yyリストに変換");
+
+        // 画像の表示イベント
+        var img = new Image();
+        img.src = "/static/images/sakura.png";//flaskはデフォルトで/staticにルーティングされるので
+        //これで　http://localhost:5000/static/images/sakura.png　へのアクセスになる
+        //ちなみに　デフォルトを変更するには　「静的ルーティング　flask」で検索
+        alert("表示イベント i,g.src="+img.src);
+
+        // 画像を表示
+        for (var i=0;i<lgt;i++){
+                //alert(lst[i].x+"  "+lst[i].y);
+                context.globalAlpha = i/lgt;//透明度設定
+                context.drawImage(img,xx[i],yy[i],30,30);
+        };
+
+        //ここでプロット
+        //for (var i=0;i<lgt;i++){
+        //    context.fillRect(xx[i],yy[i],5,5);
+        //}
+    }
+  </script>
+</head>
+<body onload="draw()" >
+    <canvas id="SimpleCanvas" width="640" height="360" style="background-color:#FFFFFF;"></canvas>
+    <div>Canvas Demo</div>
+    <hr>
+    <h1>内容チェック　</h1>
+    <p>{{ message }}</p>
+    <p>
+        id:{{ art.id }}<br>
+        書いた日：{{ art.ctime }}<br>
+        書いた人：{{ art.name }}<br><br>
+        内容：{{ art.naiyo }}<br>
+    </p>
+    <img src="../static/images/sakura.png" width="70" height="70">
+
+    <h3>戻る</h3>
+    <form action="/">
+        <button type="submit">戻る</button>
+    </form>
+    art.paintの中身確認のため（そのうち消す）<br>
+    {{art.paint}}
+</body>
+</html>

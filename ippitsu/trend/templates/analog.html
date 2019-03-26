@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title></title>
+	<meta charset="utf-8" />
+
+
+  <style>
+    div {
+      width: 400px;
+      height: 200px;
+      border: 1px solid black;
+      color: #f00;
+      background: #ff0;
+    }
+  </style>
+</head>
+
+<body>
+    <h3>アナログ的　書き込み　2019/03/16 sat</h3>
+    <h4>　　の中のテキスト書き込み</h4>
+
+    <!--   この部分は送信ボタンであるから消してはならない　2019/03/16　8:45
+      最初の行の　<form action="/xxx analog_res" method="POST">　からすると一見いらなそうだが、
+      onclick="postFormClick()"の関数の中で　/analog_res　に送信している
+      最初の行の　action="/xxx analog_res　method="POST""　だけ不要かも　　　　
+   　　　2019/03/16　9:10 <form action="/xxx analog_res" method="POST">は<form>にした
+    -->
+    <form >
+        <label for="naiyo">内容</label>
+        <input id="inp1" type="text" name="naiyo"></input>
+        <label for="name">名前</label>
+        <input id="inp2" type="text" name="name" ></input>
+        <input type="button" value="Check" onclick="postFormClick()">
+    </form>
+
+    <h4>　　一筆書き書き込み</h4>
+    <p >操作方法：マウスを動かすと描画　クリックで消去</p>
+    <p id="demo">x,y</p>
+    <div onmousemove="myFunction(event)" onmousedown="down()">
+        <canvas id="minicvs" width="400" height="200"   >  </canvas>
+        <canvas width="400" height="200" id="mycanvas">   </canvas>
+    </div>
+<hr>
+<h3>戻る</h3>
+  <form action="/">
+      <button type="submit">戻る</button>
+  </form>
+
+  
+<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script type="text/javascript">
+      //$(document).イベント(function(){});　　から$(document).イベントが省略された形　最初に実行される部分だ
+      //jqの場合　関数の形をしていても　実行されるので注意
+      $(function() {
+          //var canvas = document.getElementById('mycanvas');
+          //if (!canvas || !canvas.getContext) return false;
+          //var ctx = canvas.getContext('2d');
+      });
+
+    var startX,startY,x, y, borderWidth = 10, isDrawing = false;
+    var canvas = document.getElementById('minicvs');
+    var ctx = canvas.getContext('2d');
+    var xx=[];
+    var yy=[];
+    var xs="";
+    var ys="";
+
+
+//マウスボタンが押されたとき　送信、クリア
+function down(e) {
+　　//クリア
+    ctx.clearRect(0, 0, canva.width, canva.height);
+    xx=[];
+    yy=[];
+    xx=[e.clientX];
+    yy=[e.clientX];
+    }
+
+//ここでx,y取得して描画もしている
+function myFunction(e) {
+    var x = e.clientX-canvas.offsetLeft;
+    var y = e.clientY- canvas.offsetTop;
+
+    var coor = "Coordinates: (" + x + "," + y + ")";
+    document.getElementById("demo").innerHTML = coor;
+    xx.push(x);
+    yy.push(y);
+
+    draw2();
+}
+function draw2() {
+	　//画面にコレまでの点を全部書き込む
+    ctx.fillStyle = "rgb(200, 0, 0)";
+	  for (var i=0;i<xx.length;i++){
+	    ctx.fillRect(xx[i],yy[i]-2,5,5);
+	  } 
+}
+
+
+//送信　一旦全部オブジェクト化してformにくっつけ、最後はbodyにくっつけて送信
+function postFormClick() {
+
+      //リストxx,yyを文字列変数化する
+      for (var i=0;i<xx.length;i++){
+        xs=xs+String(xx[i])+" ";
+        ys=ys+String(yy[i]-2)+" ";
+      }
+      //（データの長さ）　と　（xxの文字列化したもの）　と　（yyを文字列化したもの）の合体で文字列変数xs
+      xs=String(xx.length)+" "+ xs + ys;
+
+      //親と成るフォームや入力文字などのオブジェクト化
+      var form = document.createElement('form');
+      var in1=document.getElementById('inp1');
+      var in2=document.getElementById('inp2');
+
+　　　//配列のオブジェクト化
+      var request = document.createElement('input');
+      request.type = 'hidden'; //入力フォームが表示されないように
+      request.name = 'xx';//変数名
+      request.value = xs;//変数の中身
+
+　　　//送信方法やアクションの設定
+      form.method = 'POST';//送る準備
+      form.action = '/analog_res';//CGIプログラムのURI
+
+      //form　にオブジェクトをくっつける
+      form.appendChild(request);
+      form.appendChild(in1);
+      form.appendChild(in2);
+
+      //body　にform をくっつけ送信
+      document.body.appendChild(form);
+      form.submit();
+}
+
+</script>
+</body>
+</html>

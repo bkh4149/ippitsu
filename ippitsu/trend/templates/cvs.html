@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title></title>
+<meta charset="utf-8" />
+
+<style>
+  div {
+    width: 400px;
+    height: 200px;
+    border: 1px solid black;
+  }
+</style>
+</head>
+
+<body>
+  <p id="demo">x,y</p>
+  <canvas id="minicvs" width="400" height="200"></canvas>
+  <div onmousemove="myFunction(event)" onmousedown="down()"></div>
+  <hr>
+  <h3>戻る</h3>
+    <form action="/">
+      <button type="submit">戻る</button>
+    </form>
+  <p >マウスを動かすと描画</p>
+  <p >クリックで送信、消去</p>
+<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+<script type="text/javascript">
+  //canvasを使ってイラストのみを作成し、送信する
+  var canva = document.getElementById('minicvs');
+  var ctx = canva.getContext('2d');
+  var xx=[];
+  var yy=[];
+  var xs=""
+  var ys=""
+
+  //マウスボタンが押されたとき　送信、クリア
+  function down(e) {
+　　//送信
+　　postForm()
+　　//クリア
+    ctx.clearRect(0, 0, canva.width, canva.height);
+    xx=[];
+    yy=[];
+    xx=[e.clientX];
+    yy=[e.clientX];
+  }
+
+  //マウス入力と画面出力
+  function myFunction(e) {
+    var x = e.clientX;
+    var y = e.clientY;
+    var coor = "Coordinates: (" + x + "," + y + ")";
+    document.getElementById("demo").innerHTML = coor;
+    xx.push(x);
+    yy.push(y);
+    draw2();//画面にコレまでの点を全部書き込む
+  }
+
+  //画面にコレまでの点を全部書き込む
+  function draw2() {
+    for (var i=0;i<xx.length;i++){
+      ctx.fillRect(xx[i],yy[i]-250,5,5);
+    }
+  }
+
+  //送信（イラストのみ）
+  function postForm() {
+      var form = document.createElement('form');
+      var request = document.createElement('input');
+
+      //引数のxx,yyをテキスト化する
+
+      for (var i=0;i<xx.length;i++){
+        xs=xs+String(xx[i])+" "
+        ys=ys+String(yy[i]-400)+" "
+      }
+      //これで変数の中身xsを作っている、（データの長さ）　と　（xxの文字列化したもの）　と　（yyを文字列化したもの）
+      xs=String(xx.length)+" "+ xs + ys
+
+      request.type = 'hidden'; //入力フォームが表示されないように
+      request.name = 'xx';//変数名
+      request.value = xs;//変数の中身
+
+      form.method = 'POST';//送る準備
+      form.action = '/cvs_ato';//送る準備
+
+      form.appendChild(request);//この行がないとデータが送れないので重要だ
+      document.body.appendChild(form);//送っているのはform.submitだ、request変数にでーたを集約し、それをformに貼り付けている　　　
+      form.submit();
+  }
+</script>
+</body>
+</html>

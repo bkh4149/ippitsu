@@ -1,0 +1,465 @@
+<html><head><meta charset="UTF-8"><title></title>
+<style>
+    p.overflow {
+        width: 400px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    a:link {
+        color: #000000;	/* リンクをクリックしていない時の色 */
+    }
+    a:visited {
+        color: #FF9696; /* すでにリンクをクリックした時の色 */
+    }
+    a:hover {
+        color: #006DD9;	/* マウスオーバーした時に色を変える */
+        background-color:#00dd00;
+    }
+    a:active {
+        color: #B20000;	/* 要素をマウスでクリックした時の色 */
+        background-color:#dd0000;
+    }
+</style>
+
+<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+
+</head>
+
+<body>
+    <h1>掲示板 main 2019/03/16(sat)</h1>
+
+<!--  ----第１エリア-------　　　 -->
+    <h3>No1:一覧表示</h3>
+    <div id="first_area" style="width: 1300px; height: 450px; overflow: auto; background-color: #99f;">
+      <table>
+        <td>
+        <table >
+            {% for art in articles %}
+            <tr>
+                <td><a href="/chk/{{art.id}}">{{ art.id }}</a>　</td>
+                <td><p class="overflow">{{ art.naiyo }}</p></td>
+                <td>{{ art.name }}</td>
+                <td>{{ art.ctime }}</td>
+                <td>削除　<a href="/del/{{art.id}}">{{ art.id }}</a>　</td>
+                <td>編集<input type="button" value="{{art.id}}" onclick="edit1(this);"/></td>
+
+                <!--   
+                <td>編集　<a href="/edit/{{art.id}}">{{ art.id }}</a>　</td>
+                <td><input type="checkbox" name="cbox" data-num="{{art.id}}"　>削除</td>
+                --> 
+            </tr>
+            {% endfor %}
+        </table>
+        </td>
+        <td>
+            <canvas id="Canvas1" width="120" height="2000" style="background-color:#99f;"></canvas>
+        </dr>
+    </table>
+    </div>
+    <div id="out1">編集用</div>
+    <textarea id="out1id" name="0" cols="5" rows="1">サンプル</textarea>
+    <textarea id="out1naiyo" name="サンプル" cols="50" rows="5">サンプル</textarea>
+    <textarea id="out1name" name="サンプル" cols="10" rows="1">サンプル</textarea>
+    <input type="button" value="上記の入力内容で修正" onclick="edit1After();">
+    <hr>
+<!--  ----第２エリア-------　　　 -->
+
+<h3>No2:新規書き込み</h3>
+<form action="/shinki" method="post">
+    <label for="naiyo">内容</label>
+    <textarea name="naiyo" cols="50" rows="5">サンプル</textarea>
+    <label for="name">名前</label>
+　  <input type="text" name="name"></input>
+    <button type="submit">送信</button>
+</form>
+
+
+<hr>
+
+<!--  ----第３エリア-------　　　 -->
+
+<h3>No3:ajax　jqueryなし版</h3>
+<form id="F1" >
+    <input id="B1" type="text" />
+    <input type="button" onclick="but3();" />
+  </form>
+<div id="out3"></div>
+
+<canvas id="SimpleCanvas" width="300" height="200" style="background-color:#ddFFFF;"></canvas>
+<div>Canvas Demo</div>
+<hr>
+
+<!--  ----第４エリア-------　　　 -->
+
+<h3>No4:データ送信をajaxでやるテスト　土曜日</h3>
+<form id="F2" >
+    <input type="button" onclick="but4();" />
+</form>
+<div id="out4a"></div>
+
+<div onmousemove="Func4(event)" >
+    <canvas id="minicvs" width="400" height="200" style="background-color:#ddFFFF;"></canvas>
+</div>
+<div id ="out4b">Canvas Demo</div>
+<hr>
+
+<!--  ----第５エリア-------　　　 -->
+
+<h3>No5:PCで文字と一筆を書き込みたい</h3>
+<form action="/analog" >
+    <button type="submit">一筆同時</button>
+</form>
+
+<h3>PCで文字と絵を書き込みたい</h3>
+<form action="/analog2" >
+    <button type="submit">絵</button>
+</form>
+
+<h3>スマホで書き込みたい</h3>
+<form action="/toc" >
+    <button type="submit">スマホ</button>
+</form>
+<hr>
+
+<!--  ----第６エリア-------　　　 -->
+
+<h3>No6:楽しんで見ようじゃないか</h3>
+<table>
+
+    <tr>
+        <td>
+                <form action="/check_slowly" method="post">
+                    <label for="chk">id</label>
+                    <input type="text" name="chk">
+                    <button type="submit">ゆっくり</button>
+                </form>
+        </td>
+        
+        <td>
+            <form action="/check_sakura" method="post">
+                <label for="chk">id</label>
+                <input type="text" name="chk">
+                <button type="submit">桜</button>
+            </form>
+        </td>
+        
+        <td>
+                <form action="/check_mushi" method="post">
+                    <label for="chk">id</label>
+                    <input type="text" name="chk">
+                    <button type="submit">虫</button>
+                </form>
+        </td>
+    </tr> 
+</table>
+
+<hr>
+<!--  ----第７エリア-------　　　 -->
+
+<h3>No7:　検索</h3>
+<h4> さかのぼってチェック</h4>
+<form action="/sck2" method="post">
+    <label for="del2">今日から</label>
+    <input type="text" name="del2">
+    <button type="submit">日前まで</button>
+</form>
+
+<h4>普通の検索</h4>
+<form action="/search" method="post">
+    <label for="kensaku">内容で検索</label>
+    <input type="text" name="kensaku">
+    <button type="submit">検索</button>
+</form>
+<form action="/search2" method="post">
+    <label for="kensaku2">名前で検索</label>
+    <input type="text" name="kensaku2">
+    <button type="submit">検索</button>
+</form>
+<hr>
+
+<!--  ----第８エリア　　以下はテスト用-------　　　 -->
+
+<hr>
+<h3>ajax　jquery</h3>
+<button id="button2">ajax</button>
+<h1 id="ichiran">aoki</h1>
+<hr>
+<h3>check</h3>
+<form action="/check" method="post">
+    <label for="chk">id</label>
+    <input type="text" name="chk">
+    <button type="submit">見る</button>
+</form>
+<hr>
+
+<h3>pcで一筆書きの絵を書き込みたい</h3>
+<form action="/cvs" >
+    <button type="submit">一筆</button>
+</form>
+<hr>
+
+
+<!--  --------------ここからJavaScript　-------------------------------------　　　　　　 -->
+<script type="text/javascript">
+
+//グローバル変数 
+var canvas = document.getElementById('minicvs');
+var ctx = canvas.getContext('2d');
+var xx=[];
+var yy=[];
+
+window.onload=disp1_pic();
+
+//--------------第１エリア用　JavaScript　----------------------------　　　　　　 
+function disp1_pic() {
+    var canvas1 = document.getElementById('Canvas1');
+    var cnt1 = canvas1.getContext('2d');
+    //ダミーデータ　
+    var id = 282;//id=222 ここは使わなくなった
+    var num=40;//表示データの個数　dbのlimitにわたす変数
+    //オブジェクト化してから、送信用のテキストデータにする
+    var textData = JSON.stringify({"id":id,"num":num});　
+    //現在のidからnum個分のデータを取ってきて表示
+    $.ajax({
+        type:'POST',
+        url:'/ajax1',
+        data:textData,//{"id":222,"num":12}ダミー
+        contentType:'application/json',
+        success:function(data) {
+            //JSON　→　オブジェクト
+            var obj=JSON.parse(data.aokiSet);
+            var rs ="",res="";
+            for (var i=0;i<num;i++){
+                res = obj[i].id + obj[i].name + obj[i].naiyo;
+                rs = rs + " " +res;
+
+                //ここからオブジェクトを数値の配列データ
+                var id = obj[i].id;            //表示用のid
+                var paint = obj[i].paint;      //オブジェクトからいったん文字列として取り出す　  ex. "[10 20 30 ] "
+                if (paint){
+                    var St = paint.split(" ");  //文字列をスペースで区切って文字列配列にしている  ex. St[0]="10"  st[1]="20"  st[2]="30"
+                    var lgt = parseInt(St[0]);  //数値の個数　 ex. lgt=253
+                    //文字列配列を　xx,yyの数値配列に変換
+                    var xx1 = [], yy1 = [];
+                    for (var j=0; j<lgt; j++){
+                        xx1[j] = parseInt(St[j+1])      //文字列を数値に変換    xx[0]=10  xx[1]=20  xx[2]=30
+                        yy1[j] = parseInt(St[j+1+lgt])
+                    }
+                    //var px = i % 4;
+                    //var py = Math.floor(i / 4);
+                    var px = 0;
+                    var py = i;
+                    var sz_h = 40;
+                    var sz_w =200;
+                    //描画
+                    for (var j=0; j < xx1.length; j++){
+                        cnt1.fillRect(xx1[j]/7 + px*sz_w + 50, yy1[j]/7 + py*sz_h , 1, 1);
+
+                    cnt1.font = "14px 'ＭＳ Ｐ'";	// フォントスタイルを定義 
+                    cnt1.strokeStyle = "red";				// 青色でstrokText
+                    cnt1.strokeText(String(id), 0, py*sz_h+15,30);
+                    }
+                }
+            }
+            //$("#out1").text(rs);
+        }
+    });
+    //window.open('sample.html');
+}
+//--------------第1エリア編集用　JavaScript　----------------------------　　　　　　 
+function edit1(bb) {
+    //alert('text'+bb.value);
+    //ボタン入力
+    var id = bb.value;
+    //オブジェクト化してから、送信用のテキストデータにする
+    var textData = JSON.stringify({"id":id});　
+
+    //受け取ったデータを表示　
+    $.ajax({
+        type:'POST',
+        url:'/ajax1e',//編集用
+        data:textData,
+        contentType:'application/json',
+        success:function(data) {
+            //JSON　→　オブジェクト
+            var obj=JSON.parse(data.aokiSet);
+            result = obj.id + obj.name + obj.naiyo;
+            $("#out1id").text(obj.id);
+            $("#out1naiyo").text(obj.naiyo);
+            $("#out1name").text(obj.name);
+        }
+    });
+}
+
+//修正データを送信
+function edit1After() {
+    var id = document.getElementById('out1id').value;
+    var ny = document.getElementById('out1naiyo').value;//修正データ
+    var nm = document.getElementById('out1name').value;
+    //alert('UserString＝'+o1ny+o1nm);　　
+   //document.getElementById('sampleInputedList').value += UserString + "\n";
+   var textData = JSON.stringify({"id":id,"name":nm,"naiyo":ny});　
+   //alert(textData);
+   $.ajax({
+        type:'POST',
+        url:'/ajax1e_wr',//編集書き込み用
+        data:textData,
+        contentType:'application/json',
+        success:function(data) {
+            //JSON　→　オブジェクト
+            var obj=JSON.parse(data.aokiSet);
+            result = obj.id + obj.name + obj.naiyo;
+            $("#out1id").text(obj.id);
+            $("#out1naiyo").text(obj.naiyo);
+            $("#out1name").text(obj.name);
+            $("#first_area").text("aoki");
+        }
+    });
+}
+
+
+
+//--------------第３エリア用　JavaScript　----------------------------　　　　　　 
+    //ajax通信のテスト用　jueryなし
+    function but3() {
+        var canvas3 = document.getElementById('SimpleCanvas');
+        var cnt3 = canvas3.getContext('2d');
+
+        //ボタン入力
+        var id = document.forms.F1.B1.value;
+        //オブジェクト化してから、送信用のテキストデータにする
+        var textData = JSON.stringify({"id":id});　
+
+        $.ajax({
+            type:'POST',
+            url:'/ajax',
+            data:textData,
+            contentType:'application/json',
+            success:function(data) {
+                //JSON　→　オブジェクト
+                var obj=JSON.parse(data.aokiSet);
+                result = obj.id + obj.name + obj.naiyo;
+                $("#out3").text(data);
+
+                //ここからオブジェクトを数値の配列データ
+                var paint = obj.paint;      //オブジェクトからいったん文字列として取り出す　  ex. "[10 20 30 ] "
+                var St = paint.split(" ");  //文字列をスペースで区切って文字列配列にしている  ex. St[0]="10"  st[1]="20"  st[2]="30"
+                var lgt = parseInt(St[0]);  //数値の個数　 ex. lgt=253
+
+                //文字列配列を　xx,yyの数値配列に変換
+                var xx = [], yy = [];
+                for (var i=0; i<lgt; i++){
+                    xx[i] = parseInt(St[i+1])      //文字列を数値に変換    xx[0]=10  xx[1]=20  xx[2]=30
+                    yy[i] = parseInt(St[i+1+lgt])
+                }
+                //console.log(`ajaxのところ　xx= ${xx}`);
+
+                //描画
+                for (var i=0; i < xx.length; i++){
+                    cnt3.fillRect(xx[i]/2, yy[i]/2, 2, 2);
+                }
+            }
+          });
+    }
+
+//--------------第４エリア用　JavaScript　----------------------------　　　　　　 
+
+//2019/03/16　analog.htmlから 描画ルーチンをコピペ　→　修正
+//　グローバル変数にも注意
+function Func4(e) {
+    //alert('text');
+
+    //これだとキャンバス自体が画面の中でスクロールしたときにだめ
+    //var x = e.clientX-canvas.offsetLeft;
+    //var y = e.clientY- canvas.offsetTop;
+
+    //これだとスクロールしてもちゃんとキャンバスに対しての相対座標が取れる
+    var rect = e.target.getBoundingClientRect();
+    var x= e.clientX - Math.floor(rect.left);
+    var y= e.clientY - Math.floor(rect.top);
+
+    //取得した値を表示
+    if (x<400 && y<200){
+        var coord = "Coordinates: (" + x + "," + y + ")";
+        document.getElementById("out4a").innerHTML = coord;
+
+        //取得した値を配列に突っ込んでいる
+        xx.push(x);
+        yy.push(y);
+        //console.log(`myFunctionのところ　xx= ${xx}`);
+
+        //描画　
+        draw4th();
+    } 
+
+}
+function draw4th() {
+	　//画面にコレまでの点を全部書き込む
+    ctx.fillStyle = "rgb(200, 0, 0)";
+	  for (var i=0;i<xx.length;i++){
+	    ctx.fillRect(xx[i],yy[i]-2,5,5);
+	  } 
+}
+
+//送信　ajax
+function but4() {
+
+        var xs="",ys="";
+        //リストxx,yyを文字列変数化する
+        for (var i=0;i<xx.length;i++){
+            xs=xs+String(xx[i])+" ";
+            ys=ys+String(yy[i]-2)+" ";
+        }
+        //（データの長さ）　と　（xxの文字列化したもの）　と　（yyを文字列化したもの）の合体で文字列変数xs
+        xs=String(xx.length)+" "+ xs + ys;
+        var textData = JSON.stringify(xs);　
+        console.log(`but4のところ　textData= ${textData}`);
+
+        $.ajax({
+            type:'POST',
+            url:'/ajax4',
+            data:textData,
+            contentType:'application/json',
+            success:function(data) {
+                console.log(`successのところ　data= ${JSON.stringify(data)}`);
+
+                var name = JSON.parse(data.js_d).name;
+                var naiyo = JSON.parse(data.js_d).naiyo;
+                result =  name + naiyo;
+                $("#out4a").text(result);                               //jq的な書き方
+                document.getElementById("out4b").innerHTML = result;    //ノーマルな書き方
+            }
+        });
+
+        disp1_pic() 
+}
+//--------------捨てエリア用　JavaScript　----------------------------　　　　　　 
+    //ajax通信のテスト用　jquery版
+    $("#button2").click(function() {
+        id=245;
+        var textData = JSON.stringify({"id":id});　
+    　　//alert('反応チェック　textData='+textData);
+        $.ajax({
+            type:'POST',
+            url:'/ajax',
+            data:textData,
+            contentType:'application/json',
+            success:function(data) {
+              var name = JSON.parse(data.ResultSet).name;
+              var naiyo = JSON.parse(data.ResultSet).naiyo;
+              var id = JSON.parse(data.ResultSet).id;
+              result = id + name + naiyo;
+            $("#ichiran").text(result);
+            }
+          });
+          return false;
+        });  
+
+    </script>
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+
+</body>
+</html>

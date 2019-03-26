@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title></title>
+	<meta charset="utf-8" />
+  <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+  <script type="text/javascript">
+    var ctx, timer, n2=100; iset = n2;
+    var xx=[], yy=[], xp=[], yp=[];
+
+   function draw() {
+        canvas = document.getElementById('SimpleCanvas');
+        ctx = canvas.getContext('2d');
+ 
+        var tagetString ="{{art.paint}}";//3a
+        var St = tagetString.split(" ");//3b
+        //console.log(St);
+        var lgt = parseInt(St[0]);
+        //xx,yyのリストに変換
+        for (var i=0;i<lgt;i++){
+          xx[i]=parseInt(St[i+1]);yy[i]=parseInt(St[i+1+lgt])
+          if (i < n2){　　　　　　
+              xp[i]=xx[i];yp[i]=yy[i];
+          };                  
+        }
+        //ここまではデータの格納
+
+        timer=setInterval(plot1,20)
+ 
+        //プロット：画面をクリアし、 100個（n2個）の点を濃淡を付けて、毎回プロットするだけ
+        function plot1(){
+            //画面をクリア
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            //100個（n2個）の点を濃淡を付けて、プロット
+            for (var i=0;i<=n2;i++){
+                var x1=xp[i];var y1=yp[i];
+                var s=100;l=50;
+                var hsl = "hsl(" + i + "," + s + "%," + l + "%)";
+                //透明度設定
+                //ctx.globalAlpha = 1-((n2-i)/n2);
+                ctx.fillStyle = hsl
+                ctx.fillRect(x1,y1,i/10,i/10);
+                //console.log(i);
+            }
+
+            iset +=1;
+            if (iset>lgt){
+                clearInterval(timer);
+            }
+            xp.shift();yp.shift();
+            xp.push(xx[iset]);yp.push(yy[iset]);
+        }
+    }
+  </script>
+</head>
+<body onload="draw()" >
+    <canvas id="SimpleCanvas" width="640" height="360" style="background-color:#FFFFFF;"></canvas>
+    <div>Canvas Demo</div>
+    <hr>
+    <h1>内容チェック2　</h1>
+    <p>{{ message }}</p>
+    <p>
+        id:{{ art.id }}<br>
+        書いた日：{{ art.ctime }}<br>
+        書いた人：{{ art.name }}<br><br>
+        内容：{{ art.naiyo }}<br>
+    </p>
+    <h3>戻る</h3>
+    <form action="/">
+        <button type="submit">戻る</button>
+    </form>
+    art.paintの中身確認のため（そのうち消す）<br>
+    {{art.paint}}
+</body>
+</html>

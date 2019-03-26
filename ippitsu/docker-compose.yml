@@ -1,0 +1,46 @@
+version: '3'
+volumes:
+  ippitsu_db:
+
+services:
+  db:
+    volumes:
+      - ippitsu_db:/var/lib/mysql
+      - .:/home
+    image: mysql:5.7
+    restart: always
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_USER: root
+      MYSQL_ROOT_PASSWORD: root      
+      MYSQL_DATABASE: trend
+      TZ: "Asia/Tokyo"
+    ports:
+      - 3307:3306
+
+  web:
+    build: .
+    working_dir: /var/www/trend
+#    links:
+#      - db
+    depends_on:
+      - db
+
+    environment:
+      #API_SERVER_URL: http://0.0.0.0:5000/
+      FLASK_DEBUG: 1
+      FLASK_PORT: 5000
+      FLASK_HOST: 0.0.0.0
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
+      MYSQL_DB: trend
+
+    ports:
+      - 5000:5000
+    volumes:
+      - .:/var/www
+    command:
+      python router_ipt.py
+

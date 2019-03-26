@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="utf-8">
+    <title>Doodle</title>
+    <style>
+        #mycanvas {
+            border: 10px solid #999;
+        }
+    </style>
+</head>
+<body>
+    <p>
+        <select id="penColor">
+            <option value="black">黒</option>
+            <option value="red">赤</option>
+            <option value="blue">青</option>
+            <option value="white">白</option>
+        </select>
+        <select id="penWidth">
+            <option value="1">細</option>
+            <option value="3">中</option>
+            <option value="5">太</option>
+        </select>
+        <input type="button" id="erase" value="消去">
+        <input type="button" id="erase_all" value="データも消去">
+        <input type="button" id="sen" value="線画">
+        <input type="button" id="mushi" value="虫">
+        <input type="button" id="sakura" value="桜">
+        <input type="button" id="neko" value="猫">
+        <input type="button" id="hana" value="花">
+
+        <input type="button" id="samune" value="サムネール">
+        <input type="button" id="save_obj" value="保存">
+        <input type="button" id="read_obj" value="読込">
+        <input type="button" id="disp_obj" value="オブジェクト表示">
+        <input type="button" id="test" value="テスト">
+        <input type="button" id="disp_emg_obj" value="緊急表示">
+        <input type="button" id="db" value="xx db直">
+        <input type="button" id="db_ajax" value="db　ajax">
+
+    </p>
+    <canvas width="800" height="600" id="mycanvas">
+        Canvasに対応したブラウザを用意してください。
+    </canvas>
+    <div id="gallery"></div>
+    <div id="disp_area"></div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+    <script>
+
+      //ver16 データ形式　objだけでやりとりする（グローバル変数）
+　　　//　　　他のグローバル変数は削除　はむずいかも
+
+      //ver15 データ表示　objの中身を個別に画面に出す
+　　　//　　　　　　エディットできるようにする
+　　　//　　　　　　花：角度を変えて８方向にコピーする(x=x*cos30 y=y*sin30みたいなこと)
+
+      //ver14 変数名変更　dt　→obj
+　　　//　　　　関数名変更　samune2 → save_obj
+  　　//　　　　　　　　　　samune3 →read_obj　
+　　　//　　　　関数追加　→disp_obj　
+　　　//　　　　関数追加　→erase_all　全データ消去
+　　　//　　　　関数追加　→erase：画面データだけの消去
+
+      //グローバル変数
+      var ctx, timer, n2=100, iset = n2, iset_last=n2, total_line=0;
+      var xx =[], yy=[], xp=[], yp=[], xt=[], yt=[], xz=[], yz=[];
+      var obj = {};
+      var canvas = document.getElementById('mycanvas');
+ 
+ 
+      //if (!canvas || !canvas.getContext) return false;
+      var ctx = canvas.getContext('2d');
+
+        $(function() {
+            var iset=0; 
+            var startX,
+                startY,
+                x,
+                y,
+                borderWidth = 10,
+                isDrawing = false;
+
+            $('#mycanvas').mousedown(function(e) {
+                isDrawing = true;
+                startX = e.pageX - $(this).offset().left - borderWidth;
+                startY = e.pageY - $(this).offset().top - borderWidth;
+            })
+            .mousemove(function(e) {
+                if (!isDrawing) return;
+                x = e.pageX - $(this).offset().left - borderWidth;
+                y = e.pageY - $(this).offset().top - borderWidth;
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);  //スタートから
+                ctx.lineTo(x, y);            //ここまで
+                ctx.stroke();                //線を引く
+                xx.push(x);                  //データを配列に保存
+                yy.push(y);
+                startX = x;//次のスタートをキープしておく
+                startY = y;
+            })
+            .mouseup(function() {
+                if (isDrawing) {
+                    isDrawing = false;//いったん書き込みモードを解除
+
+                    //これまで蓄積された一筆分の配列データxx[],yy[]を objに変換
+　　　　　　　　　　//　{0:{"x":スタートx,"y":スタートy,"xx":[差分データ],"yy":[差分データ]}　の形
+
+                    var tmpx=[],tmpy=[];
+                    //スタートからの差分を計算
+                    for (var i=0;i<xx.length;i++){
+                        tmpx[i]=xx[i]-xx[0];
+                        tmpy[i]=yy[i]-yy[0];
+                    }
+
+　　　　　　　　　　//変換
+                    tmp_obj={}//ここに変換する
+                    tmp_obj["x"]=xx[0]　　　　　　　　//スタート位置の変換
+                    tmp_obj["y"]=yy[0]
+                    tmp_obj["xx"]=JSON.stringify(tmpx)//一本のライン
+                    tmp_obj["yy"]=JSON.stringify(tmpy)
+
+                    obj[total_line] = tmp_obj;//総合データに組み入れる
+                    total_line+=1;//総合データのインデックス＋１
+                    //console.log('obj'+JSON.stringify(obj));
+
+                    xx=[];//配列データクリア
+                    yy=[];
+
+                  };
+            })
+            .mouseleave(function() {
+                isDrawing = false;
+            });
+
+            //-----------------------------------------------
+
+            $('#penColor').change(function() {
+                ctx.strokeStyle = $(this).val();
+            });
+
+            $('#penWidth').change(function() {
+                ctx.lineWidth = $(this).val();
+            });
+
+            //---------虫--------------------------------------
+            $('#mushi').click(function() {
+                //obj をパースして 虫の動作データを作成、
+                //obj の切れている部分をつなげて長い一本のxz[]とyz[]を作成する
+                var n = Object.keys(obj).length;
+                iset_last=0;
+                for (var j=0; j< n;j++){                 //obj = {"0":{},"1":{},"2":{},"3":{}}
+                    var xs=parseInt(obj[j]['x']);        //obj ={"0":{"x":394,"y":105,"xx":"[0,,46]","yy":"[0,,51]"},
+                    var ys=parseInt(obj[j]['y']);
+                    var xa = obj[j]["xx"].slice(1).slice(0,-1).split(','); // xx部分を取出分離（ただし、まだ文字列）
+                    var ya = obj[j]["yy"].slice(1).slice(0,-1).split(',');
+
+                    for (var i=0;i<xa.length;i++){
+                        xz.push(parseInt(xa[i])+xs);     //連続データに放り込む
+                        yz.push(parseInt(ya[i])+ys);
+                    };
+                    iset_last += xa.length;     //終了条件
+                };
+                //console.log("xz=",xz);
+                //console.log("iset_last=",iset_last);
+
+                //タイマーを使って描画
+                iset=0;
+                //100個分のデータを取得
+                for (var i=0;i<n2;i++){
+                  xp[i]=xz[i];yp[i]=yz[i];
+                };
+                timer=setInterval(plot1,20)
+            });
+
+	        //プロット：画面をクリアし、 100個（n2個）の点を濃淡を付けて、毎回プロットするだけ
+	        function plot1(){
+	            //画面をクリア
+	            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+	            //100個（n2個）の点を濃淡を付けて、プロット
+	　　　　　　//console.log('n2:'+n2+'  xx.len:' + xx.length);
+	            for (var i=0;i<=n2;i++){
+	                var x1=xp[i];var y1=yp[i];
+	                var s=100;l=50;
+	                var hsl = "hsl(" + i + "," + s + "%," + l + "%)";
+	                //透明度設定
+	                //ctx.globalAlpha = 1-((n2-i)/n2);
+	                ctx.fillStyle = hsl
+	                ctx.fillRect(x1,y1,i/10,i/10);
+	                //console.log(i);
+	            }
+
+	            iset +=1;
+	            //終了条件
+	            if (iset>iset_last){
+	                clearInterval(timer);
+	            }
+                //次に備えてプロット用の100個のバッファをずらすのと、新データを１つ補充
+	            xp.shift();yp.shift();
+	            xp.push(xz[iset]);yp.push(yz[iset]);
+	        }
+
+            //---------test--------------------------------------
+            $('#test').click(function() {
+                var img = new Image();
+                img.src = "sakura.png";
+                ctx.globalAlpha = 1;//透明度設定
+                ctx.drawImage(img,300,300,30,30);
+
+            }); 
+            //---------桜--------------------------------------
+            $('#sakura').click(function() {
+                var img = new Image();
+                img.src = "sakura.png";
+                //img.src = "/static/images/sakura.png";//flaskの場合はデフォルトで/staticにルーティングされるので
+                //これで　http://localhost:5000/static/images/sakura.png　へのアクセスになる
+                //ちなみに　デフォルトを変更するには　「静的ルーティング　flask」で検索
+                //alert("表示イベント i,g.src="+img.src);
+
+                //obj をパースして 桜のイメージを表示
+                var n = Object.keys(obj).length
+                for (var j=0; j< n;j++){                  //obj={"0":{},"1":{},"2":{},"3":{}}
+                    var xs=parseInt(obj[j]['x']);        //obj={"0":{"x":394,"y":105,"xx":"[0,,46]","yy":"[0,,51]"},
+                    var ys=parseInt(obj[j]['y']);
+                    var xa = obj[j]["xx"].slice(1).slice(0,-1).split(','); // xx部分を取出分離（ただし、まだ文字列）
+                    var ya = obj[j]["yy"].slice(1).slice(0,-1).split(',');
+
+                    // 画像を表示
+                    for (var i=0;i<xa.length;i++){
+                        var xp1=xs+parseInt(xa[i])-15   ;        //文字列を数字に変換  
+                        var yp1=ys+parseInt(ya[i])-15   ;                        
+                        //console.log('  xp1='+xp1);
+                        //ctx.globalAlpha = 1;//透明度設定
+
+                        ctx.globalAlpha = 1-i/xa.length;//透明度設定
+                        ctx.drawImage(img,xp1,yp1,30,30);
+                    };
+                };
+            });
+            //---------線画--------------------------------------
+            $('#sen').click(function() {
+                //obj をパースして 画像を表示、
+                var n = Object.keys(obj).length
+
+                //たくさんの一筆をまとめて一気に表示
+                for (var j=0; j< n;j++){             //俯瞰　obj={"0":{},"1":{},"2":{},"3":{}}
+                    var xs=parseInt(obj[j]['x']);    //詳細　obj={"0":{"x":394,"y":105,"xx":"[0,,46]","yy":"[0,,51]"},
+                    var ys=parseInt(obj[j]['y']);
+
+                    var xa = obj[j]["xx"].slice(1).slice(0,-1).split(','); // xx部分を取り出して分離（ただし、まだ文字列）
+                    var ya = obj[j]["yy"].slice(1).slice(0,-1).split(',');
+
+　　　　　　　　　　//一筆分の表示
+                    for (var i=1;i<xa.length-1;i++){      //xx部分を描画
+
+                        var xp1=xs+parseInt(xa[i])   ;        //文字列を数字に変換  
+                        //console.log('  xp1='+xp1);
+                        var xp2=xs+parseInt(xa[i+1]) ;                          
+                        var yp1=ys+parseInt(ya[i])   ;                        
+                        var yp2=ys+parseInt(ya[i+1]) ;                          
+
+                        ctx.moveTo(xp1,yp1);
+                        ctx.lineTo(xp2,yp2);
+                        ctx.stroke();
+                    };
+	            };
+            });
+
+            //---------花画--------------------------------------
+            $('#hana').click(function() {
+                //obj をパースして 画像を表示
+                //最後の一筆を角度を変えて複製する
+                //使う外部変数は　obj,total_line のみにする
+
+		var xz=[], yz=[];
+		var xz2=[], yz2=[];
+
+　　　　　　　　//objを配列に展開する
+                var n = Object.keys(obj).length-1;
+                var xs=parseInt(obj[n]['x']);        //obj ={"0":{"x":394,"y":105,"xx":"[0,,46]","yy":"[0,,51]"},
+                var ys=parseInt(obj[n]['y']);
+                var xa = obj[n]["xx"].slice(1).slice(0,-1).split(','); // xx部分を取出分離（ただし、まだ文字列）
+                var ya = obj[n]["yy"].slice(1).slice(0,-1).split(',');
+
+                for (var i=0;i<xa.length;i++){
+                    xz.push(parseInt(xa[i]));     //連続データに放り込む
+                    yz.push(parseInt(ya[i]));
+                };
+　　　　　　　　//console.log(`花画のところ　xz= ${xz}`);　　
+
+　　　　　　n+=1
+             for (var kk=0;kk<360;kk+=30){
+                //一筆分のsin cos　変換
+                for (var i=0;i<xa.length;i++){
+                     cos = Math.cos(kk * Math.PI/180); 
+                     sin = Math.sin(kk * Math.PI/180);
+                     xz2[i] =Math.round( xz[i] * cos - yz[i] * sin);
+                     yz2[i] =Math.round( xz[i] * sin + yz[i] * cos);
+                }
+　　　　　　　　console.log(`花画の配列　xz2= ${xz2}`);　　
+
+                //一筆分のオブジェクト作成
+                tmp_obj={};
+                tmp_obj["x"]=JSON.stringify(xs);//一本のライン
+                tmp_obj["y"]=JSON.stringify(ys);
+                tmp_obj["xx"]=JSON.stringify(xz2);//一本のライン
+                tmp_obj["yy"]=JSON.stringify(yz2);
+
+　　　　　　　　console.log(`花画のオブジェクト　tmp_obj= ${JSON.stringify(tmp_obj)}`);　　
+
+　　　　　　　　//objに追加
+                obj[n]=tmp_obj;
+　　　　　　　　n += 1
+             }
+
+　　　　　　　　console.log(`花画のところ　obj= ${JSON.stringify(obj)}`);　　
+                total_line = n;
+
+           });
+
+
+            //---------neko--------------------------------------
+
+            $('#neko').click(function() {
+	        // 画像の表示イベント
+	        var img = new Image();
+	        img.src = "neko.jpg";
+	        //img.src = "/static/images/sakura.png";//flaskの場合はデフォルトで/staticにルーティングされるので
+	        //これで　http://localhost:5000/static/images/sakura.png　へのアクセスになる
+	        //ちなみに　デフォルトを変更するには　「静的ルーティング　flask」で検索
+	        //alert("表示イベント i,g.src="+img.src);
+
+	        // 画像を表示
+	        for (var i=0;i<xx.length;i++){
+	                ctx.globalAlpha = i/xx.length;//透明度設定
+	                ctx.drawImage(img,xx[i],yy[i],30,30);
+	        };
+            });
+
+            //---------samune--------------------------------------
+            $('#samune').click(function() {
+                var img = $('<img>').attr({
+                    width: 100,
+                    height: 50,
+                    src: canvas.toDataURL()
+                });
+                var link = $('<a>').attr({
+                    href: canvas.toDataURL().replace('image/png', 'application/octet-stream'),
+                    download: new Date().getTime() + '.png'
+                });
+                $('#gallery').append(link.append(img.addClass('thumbnail')));
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            });
+
+            //---------画面だけ消去--------------------------------------
+            $('#erase').click(function() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            });
+
+            //---------消去--------------------------------------
+            $('#erase_all').click(function() {
+                if (!confirm('本当に消去しますか？')) return;
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                xx=[];
+                yy=[];
+                xp=[];
+                yp=[];
+                iset = 0;
+                obj={};
+                total_line=0
+            });
+            //---------オブジェクト保存--------------------------------------
+            $('#save_obj').click(function() {
+                localStorage.setItem('json', JSON.stringify(obj));//オブジェクトは書き込むときに文字にする
+            });
+            //---------オブジェクト読み込み--------------------------------------
+            $('#read_obj').click(function() {
+                var data = localStorage.getItem('json');//文字を読みこんだら
+                obj = JSON.parse(data);　　　　　　　　　//パースしてオブジェクトに変換
+                console.log('obj'+JSON.stringify(obj));//　オブジェクトは表示するときもJSON.stringify(obj)
+            });
+           //---------オブジェクト表示--------------------------------------
+            $('#disp_obj').click(function() {
+               var da = document.getElementById('disp_area'); 
+               let tmpstr = String(total_line)+"\n"
+
+　　　　　　　 for (var i=0;i<total_line;i++){
+                   tmpstr += String(i)+":"+ JSON.stringify(obj[i])+"\n";
+               }
+               da.innerText = tmpstr;
+            });
+
+           //---------オブジェクト緊急表示--------------------------------------
+            $('#disp_emg_obj').click(function() {
+                //var data = localStorage.getItem('json');//文字を読みこんだら
+                //obj = JSON.parse(data);　　　　　　　　　//パースしてオブジェクトに変換
+                //alert("total_lines="+total_line);
+　　　　　　　　//for (var i=0;i<total_line;i++){
+                //   alert(JSON.stringify(obj[i]));//　オブジェクトは表示するときもJSON.stringify(obj)
+　　　　　　　　//}
+            });
+
+           //---------データベース書き込み　ajax 2019/02/25
+
+            <h3>ajax　</h3>
+            <form id="F1" >
+                <input id="B1" type="text" />
+                <input type="button" onclick="C1();" />
+            </form>
+            <div id="O1"></div>
+
+   
+    //ajax通信のテスト用　jueryなし
+    function C1() {
+            var canvas = document.getElementById('SimpleCanvas');
+            var cnt = canvas.getContext('2d');
+            //ボタン入力
+            var id = document.forms.F1.B1.value;
+            //オブジェクト化してから、送信用のテキストデータにする
+            var textData = JSON.stringify({"id":id});　
+            $.ajax({
+            type:'POST',
+            url:'/ajax',
+            data:textData,
+            contentType:'application/json',
+            success:function(data) {
+                console.log(`successのところ　data= ${JSON.stringify(data)}`);
+                var name = JSON.parse(data.aokiSet).name;
+                var naiyo = JSON.parse(data.aokiSet).naiyo;
+                var id = JSON.parse(data.aokiSet).id;
+                result = id + name + naiyo;
+                $("#O1").text(result);
+                var paint = JSON.parse(data.aokiSet).paint;
+                //console.log(`ajaxのところ　paint= ${paint}`);
+                var St = paint.split(" ");//3b
+                var xx=[];
+                var yy=[];
+                var lgt = parseInt(St[0]);
+                //xx,yyのリストに変換
+                for (var i=0;i<lgt;i++){
+                    xx[i]=parseInt(St[i+1])
+                    yy[i]=parseInt(St[i+1+lgt])
+                }
+                console.log(`ajaxのところ　xx= ${xx}`);
+
+                for (var i=0;i< xx.length;i++){
+                    cnt.fillRect(xx[i]/2,yy[i]/2,2,2);
+                }
+            }
+            });
+    }
+
+
+
+            
+
+           //---------データベース接続-直接書き込み　2019/02/25
+           //2019/02/25　うまく言ってない　-------------------------------------
+            $('#db').click(function() {
+
+		// requireの設定
+		const mysql = require('mysql');
+		 
+		// MySQLとのコネクションの作成
+		const connection = mysql.createConnection({
+		  host : 'localhost',
+		  user : 'root',
+		  password :'4rkbafrr',
+		  database: 'paiza'
+		});
+		 
+		// 接続
+		connection.connect();
+		 
+		// userdataの取得
+		connection.query('SELECT * from players;', function (err, rows, fields) {
+		  //if (err) { console.log('err: ' + err); } 
+
+		  for (var i=0;i<10;i++){
+		    console.log(`id= ${rows[i].id} name=${rows[i].name} `);
+		  }
+		 
+		});
+		 
+		// userdataのカラムを取得
+		//connection.query('SHOW COLUMNS FROM userdata;', function (err, rows, fields) {
+		//  if (err) { console.log('err: ' + err); }
+		 
+		//  console.log(rows[0].Field);
+		//  console.log(rows[1].Field);
+		//});
+		 
+		// 接続終了
+		connection.end();
+
+            });
+
+        //------end----------------------------------------------------------
+        });
+    </script>
+</body>
+</html>

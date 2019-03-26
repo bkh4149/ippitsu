@@ -1,0 +1,87 @@
+<!-- コメント 
+
+
+2018/11/02　13:13　view02.html
+●ctime表示機能をつけた
+-->
+
+<html><head><meta charset="UTF-8"><title></title>
+<style>
+    p.overflow {
+        width: 400px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    a2:link {
+    color: #000000;	/* リンクをクリックしていない時の色 */
+    }
+    a2:visited {
+    color: #FF9696; /* すでにリンクをクリックした時の色 */
+    }
+    a2:hover {
+    color: #006DD9;	/* マウスオーバーした時に色を変える */
+    background-color:#00dd00;
+    }
+    a2:active {
+    color: #B20000;	/* 要素をマウスでクリックした時の色 */
+    background-color:#dd0000;
+    }
+
+</style>
+
+</head>
+
+<body>
+
+    <h1>掲示板 view03sc</h1>
+    <p>{{ message }}</p>
+
+    <h3>検索結果</h3>
+    <table>
+        {% for art in articles %}
+            <tr>
+                <td><a href="/chk/{{art.id}}">{{ art.id }}</a>　</td>
+                <td><p class="overflow">{{ art.naiyo }}</p></td>
+                <td>{{ art.name }}</td>
+                <td class="hv">{{ art.ctime }}</td>
+                <td>削除　<a href="/del/{{art.id}}">{{ art.id }}</a>　</td>
+
+            </tr>
+        {% endfor %}
+    </table>
+<hr>
+<h3>戻る</h3>
+<form action="/">
+    <button type="submit">戻る</button>
+</form>
+
+<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+<script>
+$(function() {
+    $('a').hover(
+        //<a>要素をにのったら発動（枠の色を変える）
+        function() { $(this).css('background-color','#dddd00'); },
+        //<a>要素からはなれた発動（もとに戻す）
+        function() { $(this).css('background-color','#ffffff'); }
+    );
+});
+
+$(function() {
+    $('.hv').hover(
+        //要素をにのったら発動（枠の色を変える）
+        function() { $(this).css('background-color','#00dddd'); },
+        //要素からはなれた発動（もとに戻す）
+        function() { $(this).css('background-color','#ffffff'); }
+    );
+});
+
+//       ()=> {$(this).css('background-color','#dddd00');},
+//       ()=> {$(this).css('background-color','#ffffff');}
+//    );
+//});    
+
+
+</script>
+
+</body></html>

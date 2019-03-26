@@ -1,0 +1,50 @@
+<!-- コメント 
+
+
+-->
+
+<html><head><meta charset="UTF-8"><title></title>
+<style>
+    p.overflow {
+        width: 400px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+</style>
+
+</head>
+
+<body>
+
+    <h1>一筆　掲示板のデータ </h1>
+    <p>{{ message }}</p>
+
+    <h3>戻る</h3>
+<form action="/">
+    <button type="submit">戻る</button>
+</form>
+
+<hr>
+
+    <h3>絵描きさん</h3>
+    <table>
+        {% for art in articles %}
+            {{ art.id }}<br>
+                <!--
+                <td><p class="overflow">{{ art.naiyo }}</p></td>
+                -->
+            {{ art.ctime }}<br>
+            {{ art.paint }}<br>
+            <hr>
+        {% endfor %}
+    </table>
+<hr>
+
+
+
+
+
+
+</form>
+</body></html>
