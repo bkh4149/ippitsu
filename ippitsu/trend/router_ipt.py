@@ -7,6 +7,15 @@ from sqlalchemy import and_,or_
 import datetime
 import logging
 import json
+import rq
+from rq import Queue
+import redis
+from redis import Redis
+from time import sleep  
+import os
+from omoi import omoifc
+from bs4 import BeautifulSoup
+import requests
 
 logging.basicConfig(filename="debug.log",
                     format="%(levelname)s %(asctime)s %(message)s",
@@ -23,7 +32,7 @@ db_uri = 'mysql+pymysql://root:root@db/paiza?charset=utf8'  # プロトコル://
 app.config['SQLALCHEMY_DATABASE_URI'] = db_uri  # 上で入れたものをここで使う
 db = SQLAlchemy(app)  # db変数は後で使う
 
-
+#-------------------------------------------
 #ここからオブジェクトを生成
 #ここからオブジェクトを生成
 
@@ -40,10 +49,46 @@ class Art(db.Model):
 @app.route('/')
 def select_sql():
     art = Art.query.order_by( Art.id.desc() ).all()  # id降順
+    print("●メインのところ art=", art, flush=True)
     #art = Art.query.order_by( Art.ctime.desc() ).all()  # 時間降順
     #art = Art.query.order_by( Art.ctime.desc() ).limit(20).all()  #20　限定
+
+
     mes = "Art.query"
     return render_template('main.html', message = mes, articles = art)
+
+
+
+#-------------------------------------------
+#メイン
+@app.route('/wiki')
+def wiki():
+
+    url = "https://ja.wikipedia.org/wiki/織田信長"
+    resp = requests.get(url)
+    soup = BeautifulSoup(resp.text)
+    p_tags = soup.find_all("p")
+    #print("   ●nobunagaのところ　p_tags=",p_tags,flush=True)
+
+    paint=[1,2,3]
+    name = "aokihideo"
+    return_data={}
+    i=0
+    for p in p_tags:
+        #print("●for　p=",p,flush=True)
+        ret = {"id":i,"name":name,"naiyo":p,"paint":paint}
+        return_data[i] = ret
+        i += 1
+
+    mes = "wiki"
+    return render_template('main.html', message = mes, articles = art)
+
+
+
+
+
+
+
 
 #メインのレスポンス
 #--------------
@@ -85,6 +130,7 @@ def dele(id):
 #　　idからnum個分のデータを返す、現状ほぼ全部
 #　　データが増えてきたらid=100から300個分のデータみたいな感じになると思うが
 #　　　とりあえずそんなにデータがないので現状idは適当、num=40とかで呼ばれてくる
+
 @app.route('/ajax1', methods=['POST'])
 def ajax1():
     contents = request.json
@@ -93,6 +139,8 @@ def ajax1():
     art = Art.query.order_by( Art.ctime.desc() ).all()
     #art = Art.query.filter(Art.id<=id).order_by( Art.ctime.desc() ).limit(num).all()
     #art = Art.query.order_by( Art.ctime.desc() ).limit(num).all()
+
+    #ここでオブジェクト化している
     return_data={}
     for i in range (num):
         id = art[i].id
@@ -102,32 +150,89 @@ def ajax1():
         ret = {"id":id,"name":name,"naiyo":naiyo,"paint":paint}
         return_data[i]=ret
 
-    aa= jsonify(aokiSet=json.dumps(return_data))
-    print("   aa=",aa,flush=True)
+    #aa= jsonify(aokiSet=json.dumps(return_data))
+    #print("   ●ajax1のところ　return_data=",return_data,flush=True)
+    #結果　return_data= {0: {'id': 258, 'name': 'name4', 'naiyo': 'ewewewew', 'paint': '527 374 368 ... 142 2 -1 '}, 1: {'id': 151, 'name': '絵描きさん', 'naiyo': 'qqqq151', 'paint': '211 121 121 120 119....
 
     return aa
 
+
 #------------ 第1エリア編集　読み込み用 ---------
-#ajax通信
+
+"""
+#ajax通信 ここが重い処理をやっている感じにする
 #　　idを１つうけとって、そのdbのデータを返す
 @app.route('/ajax1e', methods=['POST'])
 def ajax1e():
     contents = request.json
     id = contents['id']
-    #print("●editのところ id=",id,flush=True)
+
+    rqのテスト用
+    #環境変数
+    #rr0=os.environ.get('RQ_AOKI')
+    #rr1=os.environ.get('MYSQL_PORT') #: 3306
+    #rr2=os.environ.get('MYSQL_DB') #: trend
+    #print("●ajax1eのところ　環境変数取得後",rr0,rr1,rr2,flush=True)
+
+    #redisの確認
+    #r = redis.StrictRedis(host='localhost', port=6379, db=0)
+    #r.set("KEYa", "VALUEaaa")
+    #print("●ajax1eのところ",r.get("KEYa"),flush=True) 
+    
+    #接続
+    #redis_conn = Redis()
+    #print("●　接続のところ redis_conn=",redis_conn,flush=True) 
+    #q = Queue(connection=redis_conn) 
+    #print("●　接続のところ vars(q)=",vars(q),flush=True) 
+
+    #エンキュー
+    #job = q.enqueue(omoifc, 100000000)
+    #print("●　エンキューのところ vars(job)=",vars(job),flush=True) 
+
+
+    #エンキューしない場合
+    #omoifc(100000000)
+
     art = Art.query.filter(Art.id==id).all()
-    #print(" editのところ art=",art,flush=True)
-    #art = Art.query.order_by( Art.ctime.desc() ).limit(num).all()
 
     id = art[0].id
     naiyo = art[0].naiyo 
     name = art[0].name
     paint = art[0].paint
     ret = {"id":id,"name":name,"naiyo":naiyo,"paint":paint}
-    #print(" editのところ ret",ret,flush=True)
     
     aa= jsonify(aokiSet=json.dumps(ret))
-    #print("   aa=",aa,flush=True)
+
+    return aa
+
+#rq 重い処理
+
+
+def omoi(num):
+    for i in range (num):
+        i+=1
+        if (i%10000000==0):
+            print(i)
+    return 7777
+
+
+"""
+#ajax通信 org
+#　　idを１つうけとって、そのdbのデータを返す
+@app.route('/ajax1e', methods=['POST'])
+def ajax1e():
+    contents = request.json
+    id = contents['id']
+
+    art = Art.query.filter(Art.id==id).all()
+
+    id = art[0].id
+    naiyo = art[0].naiyo 
+    name = art[0].name
+    paint = art[0].paint
+    ret = {"id":id,"name":name,"naiyo":naiyo,"paint":paint}
+    
+    aa= jsonify(aokiSet=json.dumps(ret))
 
     return aa
 
@@ -149,10 +254,12 @@ def ajax1e_wr():
     art.naiyo = naiyo  # 変数セット
     #art.paint = value_list　#これは不要、すでにセットされているので
     db.session.commit()    #ここでdbに書く　　これだけでいい
-
-    # 返す
-    obj={"aoki_status":"ok"}
-    return jsonify(js_d=json.dumps(obj))
+    
+    #帰り　ほとんど使わないのだが、ちゃんとやらないとエラーになる
+    ret = {"id":id,"name":name,"naiyo":naiyo}
+    aa= jsonify(aokiSet=json.dumps(ret))
+    #print("   aa=",aa,flush=True)
+    return aa
 
 
 
@@ -460,4 +567,3 @@ def index2():
 #sudo python3 xxx.pyで動かすときは↓がないと起動しない
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)#ここは　gcp用だがcud37でもおなじでOK
-

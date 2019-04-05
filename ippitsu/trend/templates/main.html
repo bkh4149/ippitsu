@@ -7,17 +7,17 @@
         text-overflow: ellipsis;
     }
     a:link {
-        color: #000000;	/* リンクをクリックしていない時の色 */
+        color: #000000; /* リンクをクリックしていない時の色 */
     }
     a:visited {
         color: #FF9696; /* すでにリンクをクリックした時の色 */
     }
     a:hover {
-        color: #006DD9;	/* マウスオーバーした時に色を変える */
+        color: #006DD9; /* マウスオーバーした時に色を変える */
         background-color:#00dd00;
     }
     a:active {
-        color: #B20000;	/* 要素をマウスでクリックした時の色 */
+        color: #B20000; /* 要素をマウスでクリックした時の色 */
         background-color:#dd0000;
     }
 </style>
@@ -38,18 +38,14 @@
         <td>
         <table >
             {% for art in articles %}
-            <tr>
+            <tr >
                 <td><a href="/chk/{{art.id}}">{{ art.id }}</a>　</td>
-                <td><p class="overflow">{{ art.naiyo }}</p></td>
-                <td>{{ art.name }}</td>
+                <td><p id="tblnaiyo{{art.id}}" class="overflow">{{ art.naiyo }}</p></td>
+                <td><p id="tblname{{art.id}}">{{ art.name }}</p></td>
                 <td>{{ art.ctime }}</td>
                 <td>削除　<a href="/del/{{art.id}}">{{ art.id }}</a>　</td>
                 <td>編集<input type="button" value="{{art.id}}" onclick="edit1(this);"/></td>
 
-                <!--   
-                <td>編集　<a href="/edit/{{art.id}}">{{ art.id }}</a>　</td>
-                <td><input type="checkbox" name="cbox" data-num="{{art.id}}"　>削除</td>
-                --> 
             </tr>
             {% endfor %}
         </table>
@@ -61,7 +57,7 @@
     </div>
     <div id="out1">編集用</div>
     <textarea id="out1id" name="0" cols="5" rows="1">サンプル</textarea>
-    <textarea id="out1naiyo" name="サンプル" cols="50" rows="5">サンプル</textarea>
+    <textarea id="out1naiyo" name="サンプル" cols="50" rows="1">サンプル</textarea>
     <textarea id="out1name" name="サンプル" cols="10" rows="1">サンプル</textarea>
     <input type="button" value="上記の入力内容で修正" onclick="edit1After();">
     <hr>
@@ -258,8 +254,8 @@ function disp1_pic() {
                     for (var j=0; j < xx1.length; j++){
                         cnt1.fillRect(xx1[j]/7 + px*sz_w + 50, yy1[j]/7 + py*sz_h , 1, 1);
 
-                    cnt1.font = "14px 'ＭＳ Ｐ'";	// フォントスタイルを定義 
-                    cnt1.strokeStyle = "red";				// 青色でstrokText
+                    cnt1.font = "14px 'ＭＳ Ｐ'";  // フォントスタイルを定義 
+                    cnt1.strokeStyle = "red";               // 青色でstrokText
                     cnt1.strokeText(String(id), 0, py*sz_h+15,30);
                     }
                 }
@@ -270,6 +266,7 @@ function disp1_pic() {
     //window.open('sample.html');
 }
 //--------------第1エリア編集用　JavaScript　----------------------------　　　　　　 
+//修正データを受け取って表示まで、（そのあとユーザーが修正する）
 function edit1(bb) {
     //alert('text'+bb.value);
     //ボタン入力
@@ -286,36 +283,48 @@ function edit1(bb) {
         success:function(data) {
             //JSON　→　オブジェクト
             var obj=JSON.parse(data.aokiSet);
-            result = obj.id + obj.name + obj.naiyo;
-            $("#out1id").text(obj.id);
-            $("#out1naiyo").text(obj.naiyo);
-            $("#out1name").text(obj.name);
+            //result = obj.id + obj.name + obj.naiyo;
+            //alert('edit1　ajax successのところ'+obj.naiyo);
+            $("#out1id").val(obj.id);
+            $("#out1naiyo").val(obj.naiyo);
+            //  $("#out1naiyo").text(obj.naiyo)だと上書きできない
+            //　document.getElementById('out1naiyo').innerHTML = obj.naiyo　でも上書き不可
+            $("#out1name").val(obj.name);
         }
     });
 }
 
-//修正データを送信
+//（ユーザーが修正してボタンをおしたら）そのデータをルーターに送信する
 function edit1After() {
+    //修正データを取得　
     var id = document.getElementById('out1id').value;
     var ny = document.getElementById('out1naiyo').value;//修正データ
     var nm = document.getElementById('out1name').value;
-    //alert('UserString＝'+o1ny+o1nm);　　
-   //document.getElementById('sampleInputedList').value += UserString + "\n";
-   var textData = JSON.stringify({"id":id,"name":nm,"naiyo":ny});　
-   //alert(textData);
-   $.ajax({
+
+    //第一エリアの一覧部分に修正データを反映させる
+    var ppname = document.getElementById('tblname'+id)
+    var ppnaiyo = document.getElementById('tblnaiyo'+id)
+    ppname.innerHTML = nm;
+    ppnaiyo.innerHTML = ny;
+
+    //修正データをルータに送信
+    //document.getElementById('sampleInputedList').value += UserString + "\n";
+    var textData = JSON.stringify({"id":id,"name":nm,"naiyo":ny});　
+    //alert(textData);
+    $.ajax({
         type:'POST',
         url:'/ajax1e_wr',//編集書き込み用
         data:textData,
         contentType:'application/json',
         success:function(data) {
             //JSON　→　オブジェクト
-            var obj=JSON.parse(data.aokiSet);
-            result = obj.id + obj.name + obj.naiyo;
-            $("#out1id").text(obj.id);
-            $("#out1naiyo").text(obj.naiyo);
-            $("#out1name").text(obj.name);
-            $("#first_area").text("aoki");
+            //var obj=JSON.parse(data.aokiSet);
+            //result = obj.id + obj.name + obj.naiyo;
+            //$("#out1id").text(obj.id);
+            //$("#out1naiyo").text(obj.naiyo);
+            //$("#out1name").text(obj.name);
+            //$("#first_area").text("aoki");
+            var dummy=100;
         }
     });
 }
@@ -397,11 +406,11 @@ function Func4(e) {
 
 }
 function draw4th() {
-	　//画面にコレまでの点を全部書き込む
+    　//画面にコレまでの点を全部書き込む
     ctx.fillStyle = "rgb(200, 0, 0)";
-	  for (var i=0;i<xx.length;i++){
-	    ctx.fillRect(xx[i],yy[i]-2,5,5);
-	  } 
+      for (var i=0;i<xx.length;i++){
+        ctx.fillRect(xx[i],yy[i]-2,5,5);
+      } 
 }
 
 //送信　ajax
