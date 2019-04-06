@@ -6,6 +6,4 @@ SQLAlchemy==1.2.0
 SQLAlchemy-Enum-List==0.1.1
 pandas==0.23.4
 pymysql
-rq
 bs4
-redis

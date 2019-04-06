@@ -7,13 +7,13 @@ from sqlalchemy import and_,or_
 import datetime
 import logging
 import json
-import rq
-from rq import Queue
-import redis
-from redis import Redis
+#import rq
+#from rq import Queue
+#import redis
+#from redis import Redis
 from time import sleep  
 import os
-from omoi import omoifc
+#from omoi import omoifc
 from bs4 import BeautifulSoup
 import requests
 
@@ -60,32 +60,25 @@ def select_sql():
 
 
 #-------------------------------------------
-#メイン
+#メインに信長を表示
 @app.route('/wiki')
 def wiki():
 
     url = "https://ja.wikipedia.org/wiki/織田信長"
     resp = requests.get(url)
-    soup = BeautifulSoup(resp.text)
-    p_tags = soup.find_all("p")
-    #print("   ●nobunagaのところ　p_tags=",p_tags,flush=True)
+    bs = BeautifulSoup(resp.text, 'html.parser')
 
-    paint=[1,2,3]
-    name = "aokihideo"
-    return_data={}
-    i=0
-    for p in p_tags:
-        #print("●for　p=",p,flush=True)
-        ret = {"id":i,"name":name,"naiyo":p,"paint":paint}
-        return_data[i] = ret
-        i += 1
+    name="aa"
+    paint="1"
+    return_data=[]
+    for i,t in enumerate(bs.select("p")):
+        tx=t.getText()
+        #print(tx)
+        ret = {"id":i,"name":name,"naiyo":tx,"paint":paint}
+        return_data.append(ret)
 
     mes = "wiki"
-    return render_template('main.html', message = mes, articles = art)
-
-
-
-
+    return render_template('main.html', message = mes, articles = return_data)
 
 
 
@@ -136,6 +129,7 @@ def ajax1():
     contents = request.json
     id = contents['id']#ここはつかわなくなった
     num= contents['num']
+    print("●akax1のところ　id=",id)
     art = Art.query.order_by( Art.ctime.desc() ).all()
     #art = Art.query.filter(Art.id<=id).order_by( Art.ctime.desc() ).limit(num).all()
     #art = Art.query.order_by( Art.ctime.desc() ).limit(num).all()
@@ -150,7 +144,7 @@ def ajax1():
         ret = {"id":id,"name":name,"naiyo":naiyo,"paint":paint}
         return_data[i]=ret
 
-    #aa= jsonify(aokiSet=json.dumps(return_data))
+    aa= jsonify(aokiSet=json.dumps(return_data))
     #print("   ●ajax1のところ　return_data=",return_data,flush=True)
     #結果　return_data= {0: {'id': 258, 'name': 'name4', 'naiyo': 'ewewewew', 'paint': '527 374 368 ... 142 2 -1 '}, 1: {'id': 151, 'name': '絵描きさん', 'naiyo': 'qqqq151', 'paint': '211 121 121 120 119....
 
