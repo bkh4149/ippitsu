@@ -49,7 +49,7 @@ class Art(db.Model):
 @app.route('/')
 def select_sql():
     art = Art.query.order_by( Art.id.desc() ).all()  # id降順
-    print("●メインのところ art=", art, flush=True)
+    #print("●メインのところ art=", art, flush=True)
     #art = Art.query.order_by( Art.ctime.desc() ).all()  # 時間降順
     #art = Art.query.order_by( Art.ctime.desc() ).limit(20).all()  #20　限定
 
@@ -129,7 +129,7 @@ def ajax1():
     contents = request.json
     id = contents['id']#ここはつかわなくなった
     num= contents['num']
-    print("●akax1のところ　id=",id)
+    #print("●akax1のところ　id=",id)
     art = Art.query.order_by( Art.ctime.desc() ).all()
     #art = Art.query.filter(Art.id<=id).order_by( Art.ctime.desc() ).limit(num).all()
     #art = Art.query.order_by( Art.ctime.desc() ).limit(num).all()
@@ -491,8 +491,8 @@ def analog_res():
     value_list = request.form["xx"]
     name_res = request.form["name"]
     naiyo_res = request.form["naiyo"]
-    print("●analog_resの中　")
-    print("   name_res=",name_res)
+    #print("●analog_resの中　")
+    #print("   name_res=",name_res)
     
     art = Art() 
     art.name = name_res

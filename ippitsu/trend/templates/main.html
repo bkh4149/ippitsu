@@ -43,13 +43,12 @@
     <h1>掲示板 main 2019/04/6(sat)</h1>
 
 <!--  ----第１エリア-------　　　 -->
-    <h3>No1:一覧表示　あああ</h3>
+    <h3>No1:一覧表示　</h3>
+    <div class="canvas-wrapper">
+        <canvas id="Canvas1" width="120" height="2500" style="background-color:rgba(125,120,0,0.2);"></canvas>
+    </div>
+
     <div id="first_area" style="width: 1200px; height: 400px; overflow: auto; background-color: #99f;">
-　　　　かかっｋ　
-        <div class="canvas-wrapper">
-            <canvas id="Canvas1" width="120" height="2500" style="background-color:rgba(125,120,0,0.2);"></canvas>
-        </div>
-        あああ
         <table >
             {% for art in articles %}
             <tr >
@@ -64,7 +63,9 @@
             </tr>
             {% endfor %}
         </table>
+
     </div>
+
     <div id="out1">編集用</div>
     <textarea id="out1id" name="0" cols="5" rows="1">サンプル</textarea>
     <textarea id="out1naiyo" name="サンプル" cols="50" rows="1">サンプル</textarea>
@@ -281,22 +282,22 @@ function disp1_pic() {
 }
 
 //--------------第1エリア編集用　JavaScript　----------------------------　　　　　　 
-//修正データを受け取って表示まで、（そのあとユーザーが修正する）
-function edit1(bn) {
+//bn=idを投げて、編集スべきデータを受け取って表示まで、（そのあとユーザーが修正する）
+function edit1(bn) {　　//引数はid
     //alert('text'+bb.value);
     //ボタン入力
     var id = bn.value;
-    //オブジェクト化してから、送信用のテキストデータにする
+    var textData = JSON.stringify({"id":id});//オブジェクトをjson化して送る準備
 
     //受け取ったデータを表示　
     $.ajax({
         type:'POST',
         url:'/ajax1e',//編集用
-        data:textData,
+        data:textData,//IDだけが入っている
         contentType:'application/json',
         success:function(data) {
             //JSON　→　オブジェクト
-            var obj=JSON.parse(data.aokiSet);
+            var obj=JSON.parse(data.aokiSet);//jsonデータをオブジェクトに変換
             //result = obj.id + obj.name + obj.naiyo;
             //alert('edit1　ajax successのところ'+obj.naiyo);
             $("#out1id").val(obj.id);
